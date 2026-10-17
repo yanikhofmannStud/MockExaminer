@@ -1,0 +1,28 @@
+{
+  "title": "APSI Fragenkatalog",
+  "scope": "Beispiel – 1. Assessment Applikationssicherheit",
+  "total_questions": 4,
+  "status_values": ["offen", "gar_nicht", "ungefaehr", "gekonnt"],
+  "sections": [
+    {
+      "section": "Lektion 1 · Daten, Privatsphäre, Datenschutz",
+      "lecture": 1,
+      "lead": "Privatsphäre, Chilling Effects, Mosaik-Effekt",
+      "question_count": 2,
+      "questions": [
+        { "id": 1, "question": "Was ist Privatsphäre?", "answer": "Eine Entität hat ein Attribut, das sie selbst kontrolliert offenlegen kann.", "status": "offen" },
+        { "id": 2, "question": "Was ist der Mosaik-Effekt?", "answer": "Einzeln harmlose Daten ergeben kombiniert ein sensibles Gesamtbild.", "status": "ungefaehr" }
+      ]
+    },
+    {
+      "section": "Lektion 2 · Bedrohungsmodellierung",
+      "lecture": 2,
+      "lead": "STRIDE, Angriffsbäume",
+      "question_count": 2,
+      "questions": [
+        { "id": 3, "question": "Wofür steht STRIDE?", "answer": "Spoofing\nTampering\nRepudiation\nInformation Disclosure\nDenial of Service\nElevation of Privilege", "status": "gar_nicht" },
+        { "id": 4, "question": "Was ist ein Angriffsbaum?", "answer": "Hierarchische Darstellung, wie ein Angriffsziel über Teilziele erreicht werden kann.", "status": "gekonnt" }
+      ]
+    }
+  ]
+}
