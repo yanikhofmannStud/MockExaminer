@@ -77,8 +77,8 @@ header.top .wrap { display: flex; align-items: center; gap: 12px; padding-top: 1
 .brand { font-weight: 700; letter-spacing: -.01em; }
 .brand small { display: block; font-weight: 400; color: var(--muted); font-size: 12px; }
 .spacer { flex: 1; }
-.tabs { display: flex; gap: 4px; background: var(--surface-2); padding: 3px; border-radius: 10px; }
-.tabs button { border: 0; background: transparent; padding: 5px 12px; border-radius: 7px; }
+.tabs { display: flex; gap: 4px; max-width: 100%; overflow-x: auto; background: var(--surface-2); padding: 3px; border-radius: 10px; }
+.tabs button { white-space: nowrap; border: 0; background: transparent; padding: 5px 12px; border-radius: 7px; }
 .tabs button.active { background: var(--surface); box-shadow: var(--shadow); font-weight: 600; }
 .dirty-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--st-ungefaehr); display: none; }
 .dirty .dirty-dot { display: inline-block; }
@@ -111,6 +111,7 @@ details.paste summary { cursor: pointer; color: var(--muted); }
 /* Catalog */
 .filters { display: flex; gap: 8px; flex-wrap: wrap; margin: 16px 0; }
 .filters input[type=search] { flex: 1; min-width: 180px; }
+select { max-width: 100%; }
 .section { margin-top: 22px; }
 .section-head { display: flex; align-items: baseline; gap: 10px; margin-bottom: 4px; flex-wrap: wrap; }
 .section-head .lead { font-size: 13px; margin: 0 0 8px; }
@@ -123,7 +124,8 @@ details.paste summary { cursor: pointer; color: var(--muted); }
 .q > summary { list-style: none; cursor: pointer; padding: 11px 14px; display: flex; gap: 10px; align-items: flex-start; }
 .q > summary::-webkit-details-marker { display: none; }
 .q .qid { color: var(--muted); font-variant-numeric: tabular-nums; min-width: 2.2em; }
-.q .qtext { flex: 1; font-weight: 500; }
+.q .qtext { flex: 1; min-width: 0; font-weight: 500; }
+.qtext, .answer, .exam-q { overflow-wrap: anywhere; hyphens: auto; }
 .q .body { padding: 0 14px 14px calc(14px + 2.2em + 10px); }
 .answer { white-space: pre-wrap; background: var(--surface-2); border-radius: 8px; padding: 12px 14px; }
 .q .row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-top: 10px; }
@@ -136,7 +138,8 @@ details.paste summary { cursor: pointer; color: var(--muted); }
 /* Exam config */
 .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
 @media (max-width: 720px) { .grid2 { grid-template-columns: 1fr; } }
-fieldset { border: 1px solid var(--border); border-radius: 10px; padding: 12px 14px; margin: 0; }
+fieldset { border: 1px solid var(--border); border-radius: 10px; padding: 12px 14px; margin: 0; min-width: 0; }
+.grid2 > * { min-width: 0; }
 legend { font-weight: 600; padding: 0 6px; }
 label.chk { display: flex; gap: 8px; align-items: flex-start; padding: 4px 0; cursor: pointer; }
 label.chk input { margin-top: 4px; }
@@ -160,6 +163,44 @@ label.chk input { margin-top: 4px; }
 .result-list { margin-top: 16px; }
 .result-item { display: flex; gap: 10px; padding: 10px 0; border-top: 1px solid var(--border); align-items: flex-start; }
 .result-item .qtext { flex: 1; }
+
+/* Karteikarten */
+.fc-bar { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-bottom: 14px; }
+.fc-bar .chk { padding: 0; }
+.fc-top { display: flex; align-items: center; gap: 10px; color: var(--muted); font-size: 14px; }
+#viewCards { overflow-x: clip; }
+.fc-scene { perspective: 1400px; margin: 10px 0 16px; touch-action: pan-y; user-select: none; }
+.fc-card {
+  display: grid; cursor: pointer; position: relative;
+  transition: transform .45s cubic-bezier(.2,.7,.2,1); transform-style: preserve-3d;
+}
+.fc-card.flipped { transform: rotateY(180deg); }
+.fc-card.no-anim { transition: none; }
+.fc-face {
+  grid-area: 1 / 1; backface-visibility: hidden; -webkit-backface-visibility: hidden;
+  background: var(--surface); border: 1px solid var(--border); border-radius: 16px; box-shadow: var(--shadow);
+  min-height: 340px; padding: 44px 32px 36px;
+  display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center;
+}
+.fc-back { transform: rotateY(180deg); }
+.fc-face .fc-text { font-size: 24px; font-weight: 600; line-height: 1.35; overflow-wrap: anywhere; hyphens: auto; }
+.fc-face .fc-text.long { font-size: 17px; font-weight: 400; text-align: left; white-space: pre-wrap; line-height: 1.6; }
+.fc-face .fc-corner { position: absolute; top: 14px; left: 18px; right: 18px; display: flex; justify-content: space-between; gap: 8px; font-size: 12px; color: var(--muted); text-align: left; }
+.fc-face .fc-flip-hint { position: absolute; bottom: 12px; font-size: 12px; color: var(--muted); }
+.fc-controls { display: flex; align-items: center; gap: 8px; justify-content: center; flex-wrap: wrap; }
+.fc-controls .round { width: 44px; height: 44px; border-radius: 50%; padding: 0; font-size: 18px; }
+.fc-rate { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; }
+.fc-rate button { font-weight: 600; border-width: 2px; min-width: 110px; }
+.fc-rate button.sel { background: color-mix(in srgb, currentColor 14%, var(--surface)); }
+.fc-done { text-align: center; padding: 36px 20px; }
+.fc-done .stats { justify-content: center; }
+@media (max-width: 560px) {
+  .tabs { order: 3; width: 100%; }
+  .tabs button { flex: 1; padding: 5px 4px; font-size: 14px; }
+  .fc-face { min-height: 280px; padding: 40px 18px 32px; }
+  .fc-face .fc-text { font-size: 20px; }
+  .fc-rate button { min-width: 0; flex: 1; }
+}
 
 .toast {
   position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%) translateY(20px);
@@ -190,6 +231,8 @@ label.chk input { margin-top: 4px; }
     <div class="spacer"></div>
     <div class="tabs hidden" id="tabs">
       <button data-view="catalog" class="active">Katalog</button>
+      <button data-view="terms" id="tabTerms">Begriffe</button>
+      <button data-view="cards">Karteikarten</button>
       <button data-view="exam">Probeprüfung</button>
     </div>
     <div id="fileActions" class="hidden" style="display:flex;gap:6px;align-items:center">
@@ -222,7 +265,7 @@ label.chk input { margin-top: 4px; }
   <!-- Catalog -->
   <section id="viewCatalog" class="hidden">
     <div class="card">
-      <h2>Lernstand</h2>
+      <h2 id="catTitle">Lernstand</h2>
       <div class="stats" id="catStats"></div>
       <div class="bar" id="catBar"></div>
     </div>
@@ -235,6 +278,65 @@ label.chk input { margin-top: 4px; }
     <div id="catList"></div>
   </section>
 
+  <!-- Karteikarten -->
+  <section id="viewCards" class="hidden">
+    <div class="fc-bar">
+      <select id="fcSource">
+        <option value="qt">Fragen + Begriffe</option>
+        <option value="q">Nur Fragen</option>
+        <option value="t">Nur Begriffe</option>
+      </select>
+      <select id="fcLecture"></select>
+      <select id="fcStatus">
+        <option value="">Alle Status</option>
+        <option value="!gekonnt">Noch nicht gekonnt</option>
+      </select>
+      <button id="fcShuffle" title="Reihenfolge mischen">Mischen</button>
+      <label class="chk"><input type="checkbox" id="fcReverse"> Rückseite zuerst</label>
+    </div>
+
+    <div id="fcPlay">
+      <div class="fc-top">
+        <span id="fcCounter"></span>
+        <div class="progress" style="flex:1;margin:0"><span id="fcProgress"></span></div>
+        <span id="fcTally"></span>
+      </div>
+      <div class="fc-scene" id="fcScene">
+        <div class="fc-card" id="fcCard">
+          <div class="fc-face fc-front">
+            <div class="fc-corner"><span class="fc-group"></span><span class="fc-pill"></span></div>
+            <div class="fc-text" id="fcFront"></div>
+            <div class="fc-flip-hint">Klicken oder Leertaste zum Umdrehen</div>
+          </div>
+          <div class="fc-face fc-back">
+            <div class="fc-corner"><span class="fc-group"></span><span class="fc-pill"></span></div>
+            <div class="fc-text" id="fcBack"></div>
+          </div>
+        </div>
+      </div>
+      <div class="fc-controls">
+        <button class="round" id="fcPrev" title="Vorherige (←)">←</button>
+        <div class="fc-rate" id="fcRate">
+          <button data-rate="gar_nicht" style="color:var(--st-gar_nicht)">Gar nicht <kbd>1</kbd></button>
+          <button data-rate="ungefaehr" style="color:var(--st-ungefaehr)">Ungefähr <kbd>2</kbd></button>
+          <button data-rate="gekonnt" style="color:var(--st-gekonnt)">Gewusst <kbd>3</kbd></button>
+        </div>
+        <button class="round" id="fcNext" title="Nächste (→)">→</button>
+      </div>
+      <div class="hint" style="text-align:center"><kbd>Leertaste</kbd> umdrehen · <kbd>←</kbd><kbd>→</kbd> blättern · <kbd>1</kbd><kbd>2</kbd><kbd>3</kbd> bewerten · auf dem Handy wischen</div>
+    </div>
+
+    <div id="fcDone" class="card fc-done hidden">
+      <h2>Runde geschafft</h2>
+      <p class="muted" id="fcDoneText"></p>
+      <div class="stats" id="fcDoneStats"></div>
+      <div class="cfg-footer" style="justify-content:center">
+        <button class="primary" id="fcAgainWeak">Nicht gewusste wiederholen</button>
+        <button id="fcRestart">Alle von vorne</button>
+      </div>
+    </div>
+  </section>
+
   <!-- Exam -->
   <section id="viewExam" class="hidden">
     <!-- Config -->
@@ -244,7 +346,6 @@ label.chk input { margin-top: 4px; }
       <div class="grid2">
         <fieldset>
           <legend>Lektionen</legend>
-          <div class="small-actions"><button data-all="sec">Alle</button><button data-none="sec">Keine</button></div>
           <div id="cfgSections"></div>
         </fieldset>
         <div style="display:flex;flex-direction:column;gap:16px">
@@ -365,13 +466,28 @@ label.chk input { margin-top: 4px; }
     fileName: 'fragenkatalog.json',
     dirty: false,
     view: 'catalog',
+    src: 'q',
     exam: null,
   };
 
   const statuses = () => state.data?.status_values?.length ? state.data.status_values : DEFAULT_STATUSES;
   const label = s => LABELS[s] || s;
   const color = s => `var(--st-${s}, var(--muted))`;
-  const allQuestions = () => state.data.sections.flatMap((sec, si) => sec.questions.map(q => ({ q, sec, si })));
+  // Zwei Inhaltsarten: Fragen (sections) und Begriffe (glossary.groups)
+  const SOURCES = {
+    q: { groups: () => state.data.sections, items: g => g.questions, name: g => g.section, qf: 'question', af: 'answer', unit: 'Fragen', countKey: 'question_count' },
+    t: { groups: () => state.data.glossary?.groups || [], items: g => g.terms, name: g => g.group, qf: 'term', af: 'explanation', unit: 'Begriffe', countKey: 'term_count' },
+  };
+  const itemsOf = kind => {
+    const src = SOURCES[kind];
+    return src.groups().flatMap((g, gi) => src.items(g).map(q => ({
+      q, kind, si: `${kind}${gi}`, group: src.name(g), lecture: g.lecture ?? src.name(g),
+      prompt: kind === 't' ? `Erkläre den Begriff: ${q.term}` : q.question,
+      answer: q[src.af],
+    })));
+  };
+  const allItems = () => [...itemsOf('q'), ...itemsOf('t')];
+  const hasGlossary = () => SOURCES.t.groups().length > 0;
 
   // ---------- Toast ----------
   let toastT;
@@ -387,15 +503,19 @@ label.chk input { margin-top: 4px; }
   function normalize(d) {
     if (!d || !Array.isArray(d.sections)) throw new Error('Feld "sections" fehlt oder ist keine Liste.');
     const valid = d.status_values?.length ? d.status_values : DEFAULT_STATUSES;
-    let autoId = 1;
-    d.sections.forEach(sec => {
-      if (!Array.isArray(sec.questions)) sec.questions = [];
-      sec.questions.forEach(q => {
-        if (q.id == null) q.id = autoId;
-        autoId = Math.max(autoId, Number(q.id) || 0) + 1;
-        if (!valid.includes(q.status)) q.status = valid[0];
+    const fix = (list, key) => {
+      let autoId = 1;
+      list.forEach(g => {
+        if (!Array.isArray(g[key])) g[key] = [];
+        g[key].forEach(q => {
+          if (q.id == null) q.id = autoId;
+          autoId = Math.max(autoId, Number(q.id) || 0) + 1;
+          if (!valid.includes(q.status)) q.status = valid[0];
+        });
       });
-    });
+    };
+    fix(d.sections, 'questions');
+    if (d.glossary && Array.isArray(d.glossary.groups)) fix(d.glossary.groups, 'terms');
     return d;
   }
 
@@ -411,8 +531,11 @@ label.chk input { margin-top: 4px; }
     $('#docTitle').textContent = d.title || 'Fragenkatalog';
     $('#docScope').textContent = d.scope || state.fileName;
     document.title = (d.title || 'Fragenkatalog') + ' · Mock Examiner';
-    buildFilters();
+    $('#tabTerms').classList.toggle('hidden', !hasGlossary());
+    state.view = null;
+    state.deck = null;
     buildConfig();
+    buildCardFilters();
     setView('catalog');
     persist();
   }
@@ -445,6 +568,11 @@ label.chk input { margin-top: 4px; }
     let total = 0;
     d.sections.forEach(sec => { sec.question_count = sec.questions.length; total += sec.questions.length; });
     d.total_questions = total;
+    if (d.glossary?.groups) {
+      let terms = 0;
+      d.glossary.groups.forEach(g => { g.term_count = g.terms.length; terms += g.terms.length; });
+      d.glossary.total_terms = terms;
+    }
     return JSON.stringify(d, null, 2) + '\n';
   }
 
@@ -506,11 +634,18 @@ label.chk input { margin-top: 4px; }
 
   // ---------- Views ----------
   function setView(v) {
+    const listView = v === 'catalog' || v === 'terms';
+    if (listView && state.view !== v) {
+      state.src = v === 'terms' ? 't' : 'q';
+      buildFilters();
+    }
     state.view = v;
     $$('#tabs button').forEach(b => b.classList.toggle('active', b.dataset.view === v));
-    $('#viewCatalog').classList.toggle('hidden', v !== 'catalog');
+    $('#viewCatalog').classList.toggle('hidden', !listView);
     $('#viewExam').classList.toggle('hidden', v !== 'exam');
-    if (v === 'catalog') renderCatalog();
+    $('#viewCards').classList.toggle('hidden', v !== 'cards');
+    if (listView) renderCatalog();
+    if (v === 'cards') { if (!state.deck) buildDeck(); else renderCard(); }
     if (v === 'exam') { if (!state.exam) showExamPart('config'); updateAvail(); }
   }
 
@@ -543,57 +678,66 @@ label.chk input { margin-top: 4px; }
     return g;
   }
 
-  // ---------- Katalog ----------
+  // ---------- Katalog (Fragen oder Begriffe) ----------
   function buildFilters() {
-    const fs = $('#filterSection');
-    fs.replaceChildren(el('option', { value: '' }, 'Alle Lektionen'),
-      ...state.data.sections.map((s, i) => el('option', { value: String(i) }, s.section)));
+    const src = SOURCES[state.src];
+    $('#search').placeholder = state.src === 't' ? 'Begriffe und Erklärungen durchsuchen…' : 'Fragen und Antworten durchsuchen…';
+    $('#filterSection').replaceChildren(el('option', { value: '' }, 'Alle Lektionen'),
+      ...src.groups().map((g, i) => el('option', { value: String(i) }, src.name(g))));
     const fst = $('#filterStatus');
+    const keep = fst.value;
     fst.replaceChildren(el('option', { value: '' }, 'Alle Status'),
       ...statuses().map(s => el('option', { value: s }, label(s))));
+    fst.value = keep;
   }
 
   let expandAll = false;
   function renderCatalog() {
     if (!state.data) return;
-    renderStats($('#catStats'), $('#catBar'), countBy(allQuestions().map(x => x.q)));
+    const src = SOURCES[state.src];
+    const all = () => src.groups().flatMap(g => src.items(g));
+    $('#catTitle').textContent = `Lernstand · ${src.unit}`;
+    renderStats($('#catStats'), $('#catBar'), countBy(all()));
     const term = $('#search').value.trim().toLowerCase();
     const fSec = $('#filterSection').value;
     const fSt = $('#filterStatus').value;
     const list = $('#catList');
     list.replaceChildren();
 
-    state.data.sections.forEach((sec, si) => {
-      if (fSec !== '' && Number(fSec) !== si) return;
-      const qs = sec.questions.filter(q =>
+    src.groups().forEach((g, gi) => {
+      if (fSec !== '' && Number(fSec) !== gi) return;
+      const items = src.items(g);
+      const qs = items.filter(q =>
         (!fSt || q.status === fSt) &&
-        (!term || `${q.question}\n${q.answer}`.toLowerCase().includes(term)));
+        (!term || `${q[src.qf]}\n${q[src.af]}`.toLowerCase().includes(term)));
       if (!qs.length) return;
 
       const secStats = el('div', { class: 'bar' });
       const refreshSec = () => {
-        const c = countBy(sec.questions);
-        const n = sec.questions.length || 1;
+        const c = countBy(items);
+        const n = items.length || 1;
         secStats.replaceChildren(...statuses().map(s => el('span', { style: `width:${c[s] / n * 100}%;background:${color(s)}` })));
-        renderStats($('#catStats'), $('#catBar'), countBy(allQuestions().map(x => x.q)));
+        renderStats($('#catStats'), $('#catBar'), countBy(all()));
       };
 
       const box = el('div', { class: 'section' },
         el('div', { class: 'section-head' },
-          el('h3', {}, sec.section),
-          el('span', { class: 'muted' }, `${sec.questions.length} Fragen`)),
-        sec.lead ? el('p', { class: 'lead muted' }, sec.lead) : null,
+          el('h3', {}, src.name(g)),
+          el('span', { class: 'muted' }, `${items.length} ${src.unit}`)),
+        g.lead ? el('p', { class: 'lead muted' }, g.lead) : null,
         secStats);
 
-      qs.forEach(q => box.append(renderQuestion(q, refreshSec)));
+      qs.forEach(q => box.append(renderQuestion(q, src, refreshSec)));
       list.append(box);
       refreshSec();
     });
 
-    if (!list.children.length) list.append(el('p', { class: 'muted' }, 'Keine Fragen gefunden.'));
+    if (!list.children.length) list.append(el('p', { class: 'muted' }, `Keine ${src.unit} gefunden.`));
   }
 
-  function renderQuestion(q, onChange) {
+  function renderQuestion(q, src, onChange) {
+    const { qf, af } = src;
+    const isTerm = qf === 'term';
     const d = el('details', { class: 'q', style: `border-left-color:${color(q.status)}` });
     if (expandAll) d.open = true;
     const pill = el('span', { class: 'pill', style: `color:${color(q.status)}` }, label(q.status));
@@ -603,22 +747,22 @@ label.chk input { margin-top: 4px; }
       pill.textContent = label(q.status);
       onChange?.();
     };
-    const qText = el('span', { class: 'qtext' }, q.question);
-    const ans = el('div', { class: 'answer' }, q.answer || '—');
+    const qText = el('span', { class: 'qtext' }, q[qf]);
+    const ans = el('div', { class: 'answer' }, q[af] || '—');
 
     const editBtn = el('button', { class: 'ghost', onclick: () => startEdit() }, 'Bearbeiten');
     const body = el('div', { class: 'body' }, ans, el('div', { class: 'row' }, statusButtons(q, refresh), el('span', { class: 'spacer' }), editBtn));
 
     function startEdit() {
-      const qi = el('textarea', { rows: 2 }); qi.value = q.question;
-      const ai = el('textarea', { rows: 6 }); ai.value = q.answer || '';
+      const qi = el('textarea', { rows: 2 }); qi.value = q[qf];
+      const ai = el('textarea', { rows: 6 }); ai.value = q[af] || '';
       const form = el('div', {},
-        el('div', { class: 'muted', style: 'font-size:13px' }, 'Frage'), qi,
-        el('div', { class: 'muted', style: 'font-size:13px;margin-top:8px' }, 'Antwort'), ai,
+        el('div', { class: 'muted', style: 'font-size:13px' }, isTerm ? 'Begriff' : 'Frage'), qi,
+        el('div', { class: 'muted', style: 'font-size:13px;margin-top:8px' }, isTerm ? 'Erklärung' : 'Antwort'), ai,
         el('div', { class: 'row' },
           el('button', { class: 'primary', onclick: () => {
-            q.question = qi.value.trim(); q.answer = ai.value;
-            qText.textContent = q.question; ans.textContent = q.answer || '—';
+            q[qf] = qi.value.trim(); q[af] = ai.value;
+            qText.textContent = q[qf]; ans.textContent = q[af] || '—';
             form.replaceWith(body); markChanged();
           } }, 'Übernehmen'),
           el('button', { onclick: () => form.replaceWith(body) }, 'Abbrechen')));
@@ -632,10 +776,24 @@ label.chk input { margin-top: 4px; }
 
   // ---------- Prüfung: Konfiguration ----------
   function buildConfig() {
-    $('#cfgSections').replaceChildren(...state.data.sections.map((s, i) =>
-      el('label', { class: 'chk' },
-        el('input', { type: 'checkbox', checked: true, value: String(i), 'data-sec': '', onchange: updateAvail }),
-        el('span', {}, s.section, ' ', el('span', { class: 'muted' }, `(${s.questions.length})`)))));
+    const block = kind => {
+      const src = SOURCES[kind];
+      const groups = src.groups();
+      if (!groups.length) return [];
+      const boxes = groups.map((g, i) =>
+        el('label', { class: 'chk' },
+          el('input', { type: 'checkbox', checked: true, value: `${kind}${i}`, 'data-sec': kind, onchange: updateAvail }),
+          el('span', {}, src.name(g), ' ', el('span', { class: 'muted' }, `(${src.items(g).length})`))));
+      const toggle = on => () => { $$(`[data-sec="${kind}"]`).forEach(c => c.checked = on); updateAvail(); };
+      return [
+        el('div', { class: 'small-actions', style: 'align-items:center;margin-top:8px' },
+          el('strong', { style: 'margin-right:4px' }, src.unit),
+          el('button', { onclick: toggle(true) }, 'Alle'),
+          el('button', { onclick: toggle(false) }, 'Keine')),
+        ...boxes,
+      ];
+    };
+    $('#cfgSections').replaceChildren(...block('q'), ...block('t'));
     $('#cfgStatus').replaceChildren(...statuses().map(s =>
       el('label', { class: 'chk' },
         el('input', { type: 'checkbox', checked: s !== 'gekonnt', value: s, 'data-st': '', onchange: updateAvail }),
@@ -645,9 +803,9 @@ label.chk input { margin-top: 4px; }
   }
 
   function pool() {
-    const secs = new Set($$('[data-sec]').filter(c => c.checked).map(c => Number(c.value)));
+    const secs = new Set($$('[data-sec]').filter(c => c.checked).map(c => c.value));
     const sts = new Set($$('[data-st]').filter(c => c.checked).map(c => c.value));
-    return allQuestions().filter(x => secs.has(x.si) && sts.has(x.q.status));
+    return allItems().filter(x => secs.has(x.si) && sts.has(x.q.status));
   }
 
   function updateAvail() {
@@ -725,11 +883,11 @@ label.chk input { margin-top: 4px; }
   function renderRun() {
     const ex = state.exam, it = ex.items[ex.idx];
     $('#runCounter').textContent = `Frage ${ex.idx + 1} / ${ex.items.length}`;
-    $('#runSection').textContent = it.sec.section;
+    $('#runSection').textContent = it.group;
     $('#runStatus').replaceChildren(el('span', { class: 'pill', style: `color:${color(it.before)}` }, `vorher: ${label(it.before)}`));
     $('#runProgress').style.width = `${ex.items.filter(i => i.rating).length / ex.items.length * 100}%`;
-    $('#runQuestion').textContent = it.q.question;
-    $('#runAnswer').textContent = it.q.answer || '—';
+    $('#runQuestion').textContent = it.prompt;
+    $('#runAnswer').textContent = it.answer || '—';
     $('#runWriteWrap').classList.toggle('hidden', !ex.write);
     $('#runWrite').value = it.written;
     $('#runWrite').readOnly = ex.revealed;
@@ -785,10 +943,10 @@ label.chk input { margin-top: 4px; }
     $('#resList').replaceChildren(...ex.items.map(it => {
       const r = it.rating;
       const det = el('details', {},
-        el('summary', { style: 'cursor:pointer' }, it.q.question),
+        el('summary', { style: 'cursor:pointer' }, it.prompt),
         it.written ? el('div', {}, el('div', { class: 'muted', style: 'font-size:13px;margin-top:8px' }, 'Deine Antwort'), el('div', { class: 'answer' }, it.written)) : null,
         el('div', { class: 'muted', style: 'font-size:13px;margin-top:8px' }, 'Musterlösung'),
-        el('div', { class: 'answer' }, it.q.answer || '—'));
+        el('div', { class: 'answer' }, it.answer || '—'));
       return el('div', { class: 'result-item' },
         el('span', { class: 'qid muted', style: 'min-width:2.6em' }, `#${it.q.id}`),
         el('div', { class: 'qtext' }, det),
@@ -796,6 +954,110 @@ label.chk input { margin-top: 4px; }
     }));
     $('#btnRetryWeak').disabled = !ex.items.some(i => i.rating !== 'gekonnt');
     showExamPart('result');
+  }
+
+  // ---------- Karteikarten ----------
+  function buildCardFilters() {
+    // Lektionsnummern als "Lektion n", sonst der Gruppenname bis zum " · "
+    const seen = new Map();
+    allItems().forEach(x => {
+      if (seen.has(x.lecture)) return;
+      seen.set(x.lecture, /^\d+$/.test(String(x.lecture)) ? `Lektion ${x.lecture}` : x.group.split(' · ')[0]);
+    });
+    $('#fcLecture').replaceChildren(el('option', { value: '' }, 'Alle Lektionen'),
+      ...[...seen].map(([l, name]) => el('option', { value: String(l) }, name)));
+    $('#fcSource').classList.toggle('hidden', !hasGlossary());
+    const fs = $('#fcStatus');
+    fs.replaceChildren(fs.options[0], fs.options[1], ...statuses().map(s => el('option', { value: s }, `Nur ${label(s)}`)));
+  }
+
+  function buildDeck(items) {
+    if (!items) {
+      const src = $('#fcSource').value, lec = $('#fcLecture').value, st = $('#fcStatus').value;
+      items = allItems().filter(x =>
+        src.includes(x.kind) &&
+        (!lec || String(x.lecture) === lec) &&
+        (!st || (st === '!gekonnt' ? x.q.status !== 'gekonnt' : x.q.status === st)));
+    }
+    state.deck = { items, idx: 0, flipped: false, ratings: new Map() };
+    renderCard(true);
+  }
+
+  function renderCard(instant) {
+    const dk = state.deck;
+    const done = dk.idx >= dk.items.length;
+    $('#fcPlay').classList.toggle('hidden', done || !dk.items.length);
+    $('#fcDone').classList.toggle('hidden', !done && dk.items.length > 0);
+    if (!dk.items.length) {
+      $('#fcDone h2').textContent = 'Keine Karten';
+      $('#fcDoneText').textContent = 'Zu diesen Filtern gibt es keine Karten.';
+      $('#fcDoneStats').replaceChildren();
+      $('#fcAgainWeak').classList.add('hidden');
+      $('#fcRestart').classList.add('hidden');
+      return;
+    }
+    if (done) return renderDeckDone();
+
+    const it = dk.items[dk.idx];
+    const front = it.kind === 't' ? it.q.term : it.q.question;
+    const back = it.answer || '—';
+    const [f, b] = $('#fcReverse').checked ? [back, front] : [front, back];
+    const card = $('#fcCard');
+    if (instant) card.classList.add('no-anim');
+    card.classList.toggle('flipped', dk.flipped);
+    $('#fcFront').textContent = f;
+    $('#fcBack').textContent = b;
+    $('#fcFront').classList.toggle('long', f.length > 220);
+    $('#fcBack').classList.toggle('long', b.length > 220);
+    $$('#fcCard .fc-group').forEach(n => n.textContent = `${it.kind === 't' ? 'Begriff' : 'Frage'} · ${it.group}`);
+    $$('#fcCard .fc-pill').forEach(n => n.replaceChildren(el('span', { class: 'pill', style: `color:${color(it.q.status)}` }, label(it.q.status))));
+    if (instant) { void card.offsetWidth; card.classList.remove('no-anim'); }
+
+    $('#fcCounter').textContent = `${dk.idx + 1} / ${dk.items.length}`;
+    $('#fcProgress').style.width = `${dk.idx / dk.items.length * 100}%`;
+    const r = [...dk.ratings.values()];
+    $('#fcTally').replaceChildren(
+      el('span', { style: 'color:var(--st-gar_nicht)' }, String(r.filter(x => x === 'gar_nicht').length)), ' · ',
+      el('span', { style: 'color:var(--st-ungefaehr)' }, String(r.filter(x => x === 'ungefaehr').length)), ' · ',
+      el('span', { style: 'color:var(--st-gekonnt)' }, String(r.filter(x => x === 'gekonnt').length)));
+    $$('#fcRate button').forEach(btn => btn.classList.toggle('sel', dk.ratings.get(it) === btn.dataset.rate));
+    $('#fcPrev').disabled = dk.idx === 0;
+  }
+
+  function renderDeckDone() {
+    const dk = state.deck;
+    const r = [...dk.ratings.values()];
+    $('#fcDone h2').textContent = 'Runde geschafft';
+    $('#fcDoneText').textContent = `${dk.items.length} Karten durchgearbeitet, ${r.length} bewertet.`;
+    renderStats($('#fcDoneStats'), null, countBy(r.map(x => ({ status: x }))));
+    const weak = dk.items.filter(i => dk.ratings.get(i) !== 'gekonnt');
+    $('#fcAgainWeak').classList.toggle('hidden', !weak.length || weak.length === dk.items.length);
+    $('#fcRestart').classList.remove('hidden');
+  }
+
+  function flipCard() {
+    const dk = state.deck;
+    if (!dk || dk.idx >= dk.items.length) return;
+    dk.flipped = !dk.flipped;
+    $('#fcCard').classList.toggle('flipped', dk.flipped);
+  }
+
+  function moveCard(delta) {
+    const dk = state.deck;
+    const next = dk.idx + delta;
+    if (next < 0 || next > dk.items.length) return;
+    dk.idx = next;
+    dk.flipped = false;
+    renderCard(true);
+  }
+
+  function rateCard(s) {
+    const dk = state.deck;
+    if (!dk || dk.idx >= dk.items.length) return;
+    const it = dk.items[dk.idx];
+    dk.ratings.set(it, s);
+    setStatus(it.q, s);
+    moveCard(1);
   }
 
   // ---------- Drucken ----------
@@ -806,9 +1068,9 @@ label.chk input { margin-top: 4px; }
     area.replaceChildren(
       el('h1', {}, d.title || 'Probeprüfung'),
       el('div', {}, `${d.scope || ''} · ${items.length} Fragen · ${new Date().toLocaleDateString('de-CH')}`),
-      ...items.map((x, i) => el('div', { class: 'pq' }, el('strong', {}, `${i + 1}. `), x.q.question, el('div', { class: 'lines' }))),
+      ...items.map((x, i) => el('div', { class: 'pq' }, el('strong', {}, `${i + 1}. `), x.prompt, el('div', { class: 'lines' }))),
       el('div', { class: 'key' }, el('h1', {}, 'Lösungen'),
-        ...items.map((x, i) => el('div', { class: 'pq' }, el('strong', {}, `${i + 1}. ${x.q.question}`), el('div', { class: 'pa' }, x.q.answer || '—')))));
+        ...items.map((x, i) => el('div', { class: 'pq' }, el('strong', {}, `${i + 1}. ${x.prompt}`), el('div', { class: 'pa' }, x.answer || '—')))));
     window.print();
   }
 
@@ -847,10 +1109,6 @@ label.chk input { margin-top: 4px; }
     $$('#catList details.q').forEach(d => d.open = expandAll);
   };
 
-  document.addEventListener('click', e => {
-    const all = e.target.closest('[data-all]'), none = e.target.closest('[data-none]');
-    if (all || none) { $$('[data-sec]').forEach(c => c.checked = !!all); updateAvail(); }
-  });
 
   $('#btnStart').onclick = () => startExam(selectQuestions());
   $('#btnPrint').onclick = printExam;
@@ -862,10 +1120,39 @@ label.chk input { margin-top: 4px; }
   $('#btnNewExam').onclick = () => { state.exam = null; showExamPart('config'); updateAvail(); };
   $('#btnRetryWeak').onclick = () => startExam(shuffle(state.exam.items.filter(i => i.rating !== 'gekonnt')));
 
+  ['fcSource', 'fcLecture', 'fcStatus'].forEach(id => $('#' + id).onchange = () => buildDeck());
+  $('#fcReverse').onchange = () => { state.deck.flipped = false; renderCard(true); };
+  $('#fcShuffle').onclick = () => { buildDeck(shuffle(state.deck.items.slice())); toast('Gemischt'); };
+  $('#fcCard').onclick = flipCard;
+  $('#fcPrev').onclick = () => moveCard(-1);
+  $('#fcNext').onclick = () => moveCard(1);
+  $$('#fcRate button').forEach(b => b.onclick = () => rateCard(b.dataset.rate));
+  $('#fcRestart').onclick = () => buildDeck(state.deck.items);
+  $('#fcAgainWeak').onclick = () => buildDeck(state.deck.items.filter(i => state.deck.ratings.get(i) !== 'gekonnt'));
+  // Wischen auf Touch-Geräten
+  let swipeX = null, swiped = false;
+  $('#fcScene').addEventListener('pointerdown', e => { swipeX = e.clientX; swiped = false; });
+  $('#fcScene').addEventListener('pointerup', e => {
+    if (swipeX == null) return;
+    const dx = e.clientX - swipeX;
+    swipeX = null;
+    if (Math.abs(dx) > 60) { swiped = true; moveCard(dx < 0 ? 1 : -1); }
+  });
+  $('#fcScene').addEventListener('click', e => { if (swiped) { swiped = false; e.stopPropagation(); } }, true);
+
   document.addEventListener('keydown', e => {
     if ((e.metaKey || e.ctrlKey) && e.key === 's') { e.preventDefault(); save(); return; }
-    if (state.view !== 'exam' || !state.exam || $('#examRun').classList.contains('hidden')) return;
     const typing = e.target instanceof Element && e.target.matches('textarea, input, select');
+    if (state.view === 'cards' && state.deck && !typing && !e.metaKey && !e.ctrlKey) {
+      if (e.key === ' ' || e.key === 'ArrowUp' || e.key === 'ArrowDown') { e.preventDefault(); flipCard(); }
+      else if (e.key === 'ArrowRight') moveCard(1);
+      else if (e.key === 'ArrowLeft') moveCard(-1);
+      else if (e.key === '1') rateCard('gar_nicht');
+      else if (e.key === '2') rateCard('ungefaehr');
+      else if (e.key === '3') rateCard('gekonnt');
+      return;
+    }
+    if (state.view !== 'exam' || !state.exam || $('#examRun').classList.contains('hidden')) return;
     if (typing) {
       if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') { e.preventDefault(); reveal(); }
       return;
