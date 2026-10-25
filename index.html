@@ -208,6 +208,24 @@ label.chk input { margin-top: 4px; }
   opacity: 0; transition: .2s; pointer-events: none; z-index: 50; max-width: calc(100% - 32px);
 }
 .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+.toast.has-action { pointer-events: auto; display: flex; gap: 14px; align-items: center; }
+.toast button { background: transparent; color: inherit; border-color: color-mix(in srgb, var(--bg) 40%, transparent); padding: 3px 10px; font-weight: 600; }
+.toast button:hover { background: color-mix(in srgb, var(--bg) 15%, transparent); }
+
+/* Zurücksetzen */
+button.danger { color: var(--st-gar_nicht); }
+button.danger-solid { background: var(--st-gar_nicht); border-color: var(--st-gar_nicht); color: #fff; font-weight: 600; }
+.card-head { display: flex; align-items: center; gap: 10px; }
+.card-head h2 { flex: 1; margin: 0; }
+dialog {
+  border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface); color: var(--text);
+  padding: 22px; width: min(460px, calc(100% - 32px)); box-shadow: 0 20px 60px rgba(0,0,0,.25);
+}
+dialog::backdrop { background: rgba(0,0,0,.45); }
+dialog h2 { margin-bottom: 8px; }
+dialog .warn { background: color-mix(in srgb, var(--st-gar_nicht) 10%, var(--surface)); border: 1px solid color-mix(in srgb, var(--st-gar_nicht) 35%, transparent); border-radius: 8px; padding: 10px 12px; margin: 12px 0; font-size: 14px; }
+dialog input[type=text] { width: 100%; font-family: ui-monospace, monospace; }
+dialog .dlg-actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 16px; }
 .hidden { display: none !important; }
 
 #printArea { display: none; }
@@ -265,7 +283,10 @@ label.chk input { margin-top: 4px; }
   <!-- Catalog -->
   <section id="viewCatalog" class="hidden">
     <div class="card">
-      <h2 id="catTitle">Lernstand</h2>
+      <div class="card-head">
+        <h2 id="catTitle">Lernstand</h2>
+        <button class="ghost danger" id="btnReset" title="Status aller Einträge auf «Offen» zurücksetzen">Zurücksetzen…</button>
+      </div>
       <div class="stats" id="catStats"></div>
       <div class="bar" id="catBar"></div>
     </div>
@@ -435,6 +456,24 @@ label.chk input { margin-top: 4px; }
 <div id="printArea"></div>
 <div class="toast" id="toast"></div>
 
+<dialog id="resetDlg">
+  <form method="dialog" id="resetForm">
+    <h2>Lernstand zurücksetzen</h2>
+    <p class="muted" style="margin:0">Setzt den Status der gewählten Einträge auf «<span id="resetTarget"></span>».</p>
+    <div style="margin-top:12px">
+      <label class="chk"><input type="checkbox" id="resetQ" checked> Fragen <span class="muted" id="resetQCount"></span></label>
+      <label class="chk" id="resetTWrap"><input type="checkbox" id="resetT" checked> Begriffe <span class="muted" id="resetTCount"></span></label>
+    </div>
+    <div class="warn" id="resetWarn"></div>
+    <label for="resetConfirm" style="font-size:14px">Zum Bestätigen <strong>ZURÜCKSETZEN</strong> eintippen:</label>
+    <input type="text" id="resetConfirm" autocomplete="off" spellcheck="false" style="margin-top:6px">
+    <div class="dlg-actions">
+      <button type="button" id="resetCancel">Abbrechen</button>
+      <button type="submit" class="danger-solid" id="resetGo" disabled>Zurücksetzen</button>
+    </div>
+  </form>
+</dialog>
+
 <script>
 (() => {
   'use strict';
@@ -491,12 +530,14 @@ label.chk input { margin-top: 4px; }
 
   // ---------- Toast ----------
   let toastT;
-  function toast(msg) {
+  function toast(msg, action) {
     const t = $('#toast');
-    t.textContent = msg;
+    t.replaceChildren(el('span', {}, msg));
+    t.classList.toggle('has-action', !!action);
+    if (action) t.append(el('button', { onclick: () => { t.classList.remove('show'); action.run(); } }, action.label));
     t.classList.add('show');
     clearTimeout(toastT);
-    toastT = setTimeout(() => t.classList.remove('show'), 2400);
+    toastT = setTimeout(() => t.classList.remove('show'), action ? 10000 : 2400);
   }
 
   // ---------- Laden ----------
@@ -1060,6 +1101,58 @@ label.chk input { margin-top: 4px; }
     moveCard(1);
   }
 
+  // ---------- Zurücksetzen ----------
+  const RESET_WORD = 'ZURÜCKSETZEN';
+  function resetCandidates() {
+    const kinds = [$('#resetQ').checked && 'q', hasGlossary() && $('#resetT').checked && 't'].filter(Boolean);
+    return kinds.flatMap(k => itemsOf(k)).filter(x => x.q.status !== statuses()[0]);
+  }
+
+  function updateResetDlg() {
+    const base = statuses()[0];
+    const changed = k => itemsOf(k).filter(x => x.q.status !== base).length;
+    $('#resetTarget').textContent = label(base);
+    $('#resetQCount').textContent = `(${changed('q')} mit Lernstand)`;
+    $('#resetTCount').textContent = `(${changed('t')} mit Lernstand)`;
+    $('#resetTWrap').classList.toggle('hidden', !hasGlossary());
+    const n = resetCandidates().length;
+    $('#resetWarn').textContent = n
+      ? `${n} Einträge verlieren ihren Status. Direkt danach kannst du es noch rückgängig machen. Die Datei wird erst überschrieben, wenn du speicherst.`
+      : 'Nichts zurückzusetzen – alle gewählten Einträge sind bereits offen.';
+    $('#resetGo').disabled = !n || $('#resetConfirm').value.trim().toUpperCase() !== RESET_WORD;
+  }
+
+  function openReset() {
+    $('#resetConfirm').value = '';
+    $('#resetQ').checked = state.src !== 't';
+    $('#resetT').checked = state.src === 't';
+    updateResetDlg();
+    $('#resetDlg').showModal();
+    $('#resetConfirm').focus();
+  }
+
+  function doReset() {
+    if ($('#resetConfirm').value.trim().toUpperCase() !== RESET_WORD) return;
+    const items = resetCandidates();
+    if (!items.length) return;
+    const backup = items.map(x => [x.q, x.q.status]);
+    const base = statuses()[0];
+    items.forEach(x => { x.q.status = base; });
+    afterBulkChange();
+    toast(`${items.length} Einträge zurückgesetzt`, {
+      label: 'Rückgängig',
+      run: () => { backup.forEach(([q, st]) => { q.status = st; }); afterBulkChange(); toast('Wiederhergestellt'); },
+    });
+  }
+
+  function afterBulkChange() {
+    markChanged();
+    state.exam = null;
+    state.deck = null;
+    setView(state.view);
+    updateAvail();
+  }
+
   // ---------- Drucken ----------
   function printExam() {
     const items = selectQuestions();
@@ -1140,8 +1233,14 @@ label.chk input { margin-top: 4px; }
   });
   $('#fcScene').addEventListener('click', e => { if (swiped) { swiped = false; e.stopPropagation(); } }, true);
 
+  $('#btnReset').onclick = openReset;
+  ['resetQ', 'resetT'].forEach(id => $('#' + id).onchange = updateResetDlg);
+  $('#resetConfirm').oninput = updateResetDlg;
+  $('#resetCancel').onclick = () => $('#resetDlg').close();
+  $('#resetForm').onsubmit = e => { e.preventDefault(); if ($('#resetGo').disabled) return; $('#resetDlg').close(); doReset(); };
   document.addEventListener('keydown', e => {
     if ((e.metaKey || e.ctrlKey) && e.key === 's') { e.preventDefault(); save(); return; }
+    if ($('#resetDlg').open) return;
     const typing = e.target instanceof Element && e.target.matches('textarea, input, select');
     if (state.view === 'cards' && state.deck && !typing && !e.metaKey && !e.ctrlKey) {
       if (e.key === ' ' || e.key === 'ArrowUp' || e.key === 'ArrowDown') { e.preventDefault(); flipCard(); }
