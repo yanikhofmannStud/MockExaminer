@@ -1,28 +1,119 @@
 {
-  "title": "APSI Fragenkatalog",
-  "scope": "Beispiel – 1. Assessment Applikationssicherheit",
-  "total_questions": 4,
+  "title": "Netzwerke Fragenkatalog (Beispiel)",
+  "scope": "Beispielkatalog für den Mock Examiner, Lektionen 1-2",
+  "total_questions": 10,
   "status_values": ["offen", "gar_nicht", "ungefaehr", "gekonnt"],
   "sections": [
     {
-      "section": "Lektion 1 · Daten, Privatsphäre, Datenschutz",
+      "section": "Lektion 1 · Grundlagen & OSI-Modell",
       "lecture": 1,
-      "lead": "Privatsphäre, Chilling Effects, Mosaik-Effekt",
-      "question_count": 2,
+      "lead": "Schichtenmodelle, Kapselung, Adressierung.",
+      "question_count": 4,
       "questions": [
-        { "id": 1, "question": "Was ist Privatsphäre?", "answer": "Eine Entität hat ein Attribut, das sie selbst kontrolliert offenlegen kann.", "status": "offen" },
-        { "id": 2, "question": "Was ist der Mosaik-Effekt?", "answer": "Einzeln harmlose Daten ergeben kombiniert ein sensibles Gesamtbild.", "status": "ungefaehr" }
+        {
+          "id": 1,
+          "question": "Nenne die sieben Schichten des OSI-Modells von unten nach oben.",
+          "answer": "1. Bitübertragung (Physical)\n2. Sicherung (Data Link)\n3. Vermittlung (Network)\n4. Transport\n5. Sitzung (Session)\n6. Darstellung (Presentation)\n7. Anwendung (Application)",
+          "status": "gekonnt"
+        },
+        {
+          "id": 2,
+          "question": "Was versteht man unter Kapselung (Encapsulation)?",
+          "answer": "Jede Schicht ergänzt die Daten der darüberliegenden Schicht um einen eigenen Header (teils auch Trailer). Beim Empfänger entfernt jede Schicht ihren Header wieder und reicht die Nutzdaten nach oben weiter.",
+          "status": "ungefaehr"
+        },
+        {
+          "id": 3,
+          "question": "Worin unterscheiden sich MAC- und IP-Adresse?",
+          "answer": "Die MAC-Adresse (Schicht 2) identifiziert eine Netzwerkschnittstelle im lokalen Segment und ist meist vom Hersteller vergeben. Die IP-Adresse (Schicht 3) ist logisch, hierarchisch aufgebaut und ermöglicht Routing über Netzgrenzen hinweg.",
+          "status": "gar_nicht"
+        },
+        {
+          "id": 4,
+          "question": "Wie viele Hosts sind in einem /26-Netz nutzbar?",
+          "answer": "2^(32−26) = 64 Adressen, abzüglich Netz- und Broadcast-Adresse = 62 nutzbare Hosts.",
+          "status": "offen"
+        }
       ]
     },
     {
-      "section": "Lektion 2 · Bedrohungsmodellierung",
+      "section": "Lektion 2 · Transport & Anwendungsprotokolle",
       "lecture": 2,
-      "lead": "STRIDE, Angriffsbäume",
+      "lead": "TCP vs. UDP, Handshake, DNS, HTTP.",
+      "question_count": 4,
+      "questions": [
+        {
+          "id": 5,
+          "question": "Beschreibe den TCP-Drei-Wege-Handshake.",
+          "answer": "1. Client → Server: SYN (mit Startsequenznummer)\n2. Server → Client: SYN-ACK (eigene Sequenznummer + Bestätigung)\n3. Client → Server: ACK\nDanach ist die Verbindung in beide Richtungen aufgebaut.",
+          "status": "ungefaehr"
+        },
+        {
+          "id": 6,
+          "question": "Wann wählt man UDP statt TCP?",
+          "answer": "Wenn geringe Latenz wichtiger ist als garantierte, geordnete Zustellung, z.B. bei Voice/Video-Streaming, Online-Games oder DNS-Anfragen. Fehlerbehandlung übernimmt bei Bedarf die Anwendung.",
+          "status": "offen"
+        },
+        {
+          "id": 7,
+          "question": "Was passiert bei einer rekursiven DNS-Auflösung?",
+          "answer": "Der Resolver fragt nacheinander Root-Server, TLD-Server und den autoritativen Nameserver der Domain, bis er die Antwort hat. Das Ergebnis gibt er an den Client zurück und speichert es gemäss TTL im Cache.",
+          "status": "gar_nicht"
+        },
+        {
+          "id": 8,
+          "question": "Was ist der Unterschied zwischen HTTP-Statuscodes 401 und 403?",
+          "answer": "401 Unauthorized: Authentisierung fehlt oder ist ungültig – mit gültigen Credentials könnte es klappen.\n403 Forbidden: Der Client ist (ggf.) bekannt, hat aber keine Berechtigung für die Ressource.",
+          "status": "offen"
+        }
+      ]
+    },
+    {
+      "section": "Gemischt · lektionsübergreifende Fragen",
+      "lecture": "mixed",
+      "lead": "Fragen, die mehrere Lektionen verbinden.",
       "question_count": 2,
       "questions": [
-        { "id": 3, "question": "Wofür steht STRIDE?", "answer": "Spoofing\nTampering\nRepudiation\nInformation Disclosure\nDenial of Service\nElevation of Privilege", "status": "gar_nicht" },
-        { "id": 4, "question": "Was ist ein Angriffsbaum?", "answer": "Hierarchische Darstellung, wie ein Angriffsziel über Teilziele erreicht werden kann.", "status": "gekonnt" }
+        {
+          "id": 9,
+          "question": "Was passiert, wenn du im Browser https://example.com eingibst? Nenne die wichtigsten Schritte.",
+          "answer": "1. DNS-Auflösung von example.com zur IP-Adresse\n2. ARP bzw. Routing zum Default-Gateway\n3. TCP-Handshake zu Port 443\n4. TLS-Handshake (Zertifikat prüfen, Schlüssel aushandeln)\n5. HTTP-GET-Anfrage, Server antwortet mit HTML\n6. Browser rendert und lädt weitere Ressourcen nach",
+          "status": "offen"
+        },
+        {
+          "id": 10,
+          "question": "Warum braucht man trotz IP-Adressen noch Portnummern?",
+          "answer": "Die IP-Adresse adressiert nur den Host. Portnummern (Schicht 4) unterscheiden die Anwendungen bzw. Verbindungen auf diesem Host, damit z.B. Web- und Mailserver gleichzeitig laufen können.",
+          "status": "gekonnt"
+        }
       ]
     }
-  ]
+  ],
+  "glossary": {
+    "status_values": ["offen", "gar_nicht", "ungefaehr", "gekonnt"],
+    "total_terms": 7,
+    "groups": [
+      {
+        "group": "Lektion 1 · Grundlagen",
+        "lecture": 1,
+        "term_count": 4,
+        "terms": [
+          { "id": 1, "term": "Subnetzmaske", "explanation": "Legt fest, welcher Teil einer IP-Adresse das Netz und welcher den Host bezeichnet, z.B. 255.255.255.0 bzw. /24.", "status": "gekonnt" },
+          { "id": 2, "term": "ARP", "explanation": "Address Resolution Protocol: ermittelt im lokalen Netz zu einer IP-Adresse die zugehörige MAC-Adresse.", "status": "ungefaehr" },
+          { "id": 3, "term": "Default-Gateway", "explanation": "Router, an den ein Host alle Pakete schickt, deren Ziel ausserhalb des eigenen Subnetzes liegt.", "status": "offen" },
+          { "id": 4, "term": "MTU", "explanation": "Maximum Transmission Unit: grösste Paketgrösse, die über eine Verbindung ohne Fragmentierung übertragen werden kann (Ethernet: 1500 Byte).", "status": "gar_nicht" }
+        ]
+      },
+      {
+        "group": "Lektion 2 · Transport & Anwendung",
+        "lecture": 2,
+        "term_count": 3,
+        "terms": [
+          { "id": 5, "term": "Three-Way-Handshake", "explanation": "Verbindungsaufbau bei TCP mit SYN, SYN-ACK und ACK.", "status": "ungefaehr" },
+          { "id": 6, "term": "TTL (DNS)", "explanation": "Time to Live: wie lange ein DNS-Eintrag in Caches gültig bleibt, bevor er neu abgefragt werden muss.", "status": "offen" },
+          { "id": 7, "term": "Idempotenz (HTTP)", "explanation": "Eine Methode ist idempotent, wenn mehrfaches Ausführen denselben Effekt hat wie einmaliges, z.B. GET, PUT und DELETE, nicht aber POST.", "status": "offen" }
+        ]
+      }
+    ]
+  }
 }
