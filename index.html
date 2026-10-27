@@ -200,7 +200,20 @@ label.chk input { margin-top: 4px; }
 }
 .fc-back { transform: rotateY(180deg); }
 .fc-face .fc-text { font-size: 24px; font-weight: 600; line-height: 1.35; overflow-wrap: anywhere; hyphens: auto; }
-.fc-face .fc-text.long { font-size: 17px; font-weight: 400; text-align: left; white-space: pre-wrap; line-height: 1.6; }
+.fc-face .fc-text.long { font-size: 17px; font-weight: 400; text-align: left; line-height: 1.6; }
+.fc-text p, .fc-text ul, .fc-text ol, .fc-text pre, .fc-text blockquote, .fc-text h4 { margin: 0 0 .6em; }
+.fc-text > :last-child { margin-bottom: 0; }
+.fc-text h4 { font-size: 1.05em; }
+.fc-text ul, .fc-text ol { padding-left: 1.4em; text-align: left; }
+.fc-text code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: .88em; background: var(--surface-2); padding: 1px 5px; border-radius: 4px; }
+.fc-text pre { text-align: left; background: var(--surface-2); padding: 10px 12px; border-radius: 8px; overflow-x: auto; }
+.fc-text pre code { background: none; padding: 0; }
+.fc-text blockquote { text-align: left; border-left: 3px solid var(--border); padding-left: 10px; color: var(--muted); }
+.fc-text a { color: var(--accent); }
+.fc-text .tbl { max-width: 100%; overflow-x: auto; margin: 0 0 .6em; }
+.fc-text table { border-collapse: collapse; font-size: .92em; text-align: left; }
+.fc-text th, .fc-text td { border: 1px solid var(--border); padding: 4px 8px; vertical-align: top; }
+.fc-text th { background: var(--surface-2); }
 .fc-face .fc-corner { position: absolute; top: 14px; left: 18px; right: 18px; display: flex; justify-content: space-between; gap: 8px; font-size: 12px; color: var(--muted); text-align: left; }
 .fc-face .fc-flip-hint { position: absolute; bottom: 12px; font-size: 12px; color: var(--muted); }
 .fc-controls { display: flex; align-items: center; gap: 8px; justify-content: center; flex-wrap: wrap; }
@@ -1077,6 +1090,70 @@ dialog .dlg-actions { display: flex; gap: 8px; justify-content: flex-end; margin
     showExamPart('result');
   }
 
+  // ---------- Markdown ----------
+  // Bewusst klein und ohne Abhängigkeiten: Überschriften, Listen, Codeblöcke, Zitate,
+  // Tabellen, **fett**, *kursiv*, `code`, [Link](https://…). Eingebettetes HTML wird escaped.
+  const esc = s => s.replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
+  function mdInline(s) {
+    const codes = [];
+    s = esc(s).replace(/`([^`]+)`/g, (_, c) => `\u0000${codes.push(c) - 1}\u0000`)
+      .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+      .replace(/(^|[^*\w])\*(?![\s*])(.+?)\*(?!\w)/g, '$1<em>$2</em>')
+      .replace(/\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g, '<a href="$2" target="_blank" rel="noopener">$1</a>');
+    return s.replace(/\u0000(\d+)\u0000/g, (_, i) => `<code>${codes[i]}</code>`);
+  }
+  const cells = line => line.trim().replace(/^\|/, '').replace(/\|$/, '').split('|').map(c => c.trim());
+  const isSep = line => /^\s*\|?\s*:?-+:?\s*(\|\s*:?-+:?\s*)*\|?\s*$/.test(line);
+  function md(src) {
+    const out = [];
+    let list = null, para = [];
+    const flush = () => {
+      if (para.length) out.push(`<p>${para.map(mdInline).join('<br>')}</p>`);
+      para = [];
+    };
+    const closeList = () => { if (list) out.push(`</${list}>`); list = null; };
+    const lines = String(src).replace(/\r\n?/g, '\n').split('\n');
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i];
+      let m;
+      if (/^\s*```/.test(line)) {
+        flush(); closeList();
+        const code = [];
+        while (++i < lines.length && !/^\s*```/.test(lines[i])) code.push(lines[i]);
+        out.push(`<pre><code>${esc(code.join('\n'))}</code></pre>`);
+      } else if (!line.trim()) {
+        flush(); closeList();
+      } else if (line.includes('|') && isSep(lines[i + 1] || '')) {
+        flush(); closeList();
+        const align = cells(lines[i + 1]).map(c => c.endsWith(':') ? (c.startsWith(':') ? 'center' : 'right') : '');
+        const row = (l, tag) => `<tr>${cells(l).map((c, j) => `<${tag}${align[j] ? ` style="text-align:${align[j]}"` : ''}>${mdInline(c)}</${tag}>`).join('')}</tr>`;
+        let body = '';
+        for (i += 2; i < lines.length && lines[i].includes('|') && lines[i].trim(); i++) body += row(lines[i], 'td');
+        i--;
+        out.push(`<div class="tbl"><table><thead>${row(line, 'th')}</thead><tbody>${body}</tbody></table></div>`);
+      } else if ((m = line.match(/^#{1,6}\s+(.*)/))) {
+        flush(); closeList();
+        out.push(`<h4>${mdInline(m[1])}</h4>`);
+      } else if ((m = line.match(/^\s*([-*+]|\d+[.)])\s+(.*)/))) {
+        flush();
+        const tag = /\d/.test(m[1]) ? 'ol' : 'ul';
+        if (list !== tag) { closeList(); out.push(tag === 'ol' ? `<ol start="${parseInt(m[1])}">` : '<ul>'); list = tag; }
+        out.push(`<li>${mdInline(m[2])}</li>`);
+      } else if ((m = line.match(/^>\s?(.*)/))) {
+        flush(); closeList();
+        out.push(`<blockquote>${mdInline(m[1])}</blockquote>`);
+      } else if (list && /^\s+\S/.test(line)) {
+        // eingerückte Fortsetzung des letzten Listenpunkts
+        out[out.length - 1] = out[out.length - 1].replace(/<\/li>$/, `<br>${mdInline(line.trim())}</li>`);
+      } else {
+        closeList();
+        para.push(line);
+      }
+    }
+    flush(); closeList();
+    return out.join('');
+  }
+
   // ---------- Karteikarten ----------
   function buildCardFilters() {
     // Lektionsnummern als "Lektion n", sonst der Gruppenname bis zum " · "
@@ -1125,10 +1202,11 @@ dialog .dlg-actions { display: flex; gap: 8px; justify-content: flex-end; margin
     const card = $('#fcCard');
     if (instant) card.classList.add('no-anim');
     card.classList.toggle('flipped', dk.flipped);
-    $('#fcFront').textContent = f;
-    $('#fcBack').textContent = b;
-    $('#fcFront').classList.toggle('long', f.length > 220);
-    $('#fcBack').classList.toggle('long', b.length > 220);
+    $('#fcFront').innerHTML = md(f);
+    $('#fcBack').innerHTML = md(b);
+    $('#fcFront').classList.toggle('long', f.length > 220 || f.includes('\n'));
+    $('#fcBack').classList.toggle('long', b.length > 220 || b.includes('\n'));
+    $$('#fcCard a').forEach(a => a.onclick = e => e.stopPropagation());
     $$('#fcCard .fc-group').forEach(n => n.textContent = `${it.kind === 't' ? 'Begriff' : 'Frage'} · ${it.group}`);
     $$('#fcCard .fc-pill').forEach(n => n.replaceChildren(el('span', { class: 'pill', style: `color:${color(it.q.status)}` }, label(it.q.status))));
     if (instant) { void card.offsetWidth; card.classList.remove('no-anim'); }
