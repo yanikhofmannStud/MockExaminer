@@ -82,6 +82,7 @@ header.top .wrap { display: flex; align-items: center; gap: 12px; padding-top: 1
 .tabs button.active { background: var(--surface); box-shadow: var(--shadow); font-weight: 600; }
 .dirty-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--st-ungefaehr); display: none; }
 .dirty .dirty-dot { display: inline-block; }
+.autosave { display: flex; gap: 5px; align-items: center; font-size: 13px; color: var(--muted); cursor: pointer; white-space: nowrap; }
 
 main { padding: 24px 0 64px; }
 .card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow); padding: 20px; }
@@ -255,6 +256,7 @@ dialog .dlg-actions { display: flex; gap: 8px; justify-content: flex-end; margin
     </div>
     <div id="fileActions" class="hidden" style="display:flex;gap:6px;align-items:center">
       <span class="dirty-dot" title="Ungespeicherte Änderungen"></span>
+      <label class="autosave hidden" id="autoWrap" title="Änderungen automatisch in die geöffnete Datei schreiben"><input type="checkbox" id="autoSave"> Auto-Save</label>
       <button id="btnOpen2" title="Andere JSON-Datei öffnen">Öffnen</button>
       <button id="btnSave" class="primary" title="Speichern (⌘S)">Speichern</button>
     </div>
@@ -483,6 +485,7 @@ dialog .dlg-actions { display: flex; gap: 8px; justify-content: flex-end; margin
   // Gewicht für "Schwache Fragen bevorzugen"
   const WEIGHT = { gar_nicht: 4, offen: 3, ungefaehr: 2, gekonnt: 1 };
   const LS_KEY = 'mockexaminer:last';
+  const AUTO_KEY = 'mockexaminer:autosave';
 
   const $ = (s, r = document) => r.querySelector(s);
   const $$ = (s, r = document) => [...r.querySelectorAll(s)];
@@ -504,6 +507,7 @@ dialog .dlg-actions { display: flex; gap: 8px; justify-content: flex-end; margin
     fileHandle: null,
     fileName: 'fragenkatalog.json',
     dirty: false,
+    autoSave: false,
     view: 'catalog',
     src: 'q',
     exam: null,
@@ -617,14 +621,19 @@ dialog .dlg-actions { display: flex; gap: 8px; justify-content: flex-end; margin
     return JSON.stringify(d, null, 2) + '\n';
   }
 
+  async function writeFile(handle, text) {
+    const w = await handle.createWritable();
+    await w.write(text);
+    await w.close();
+  }
+
   async function save() {
     if (!state.data) return;
+    clearTimeout(autoT);
     const text = serialize();
     if (state.fileHandle?.createWritable) {
       try {
-        const w = await state.fileHandle.createWritable();
-        await w.write(text);
-        await w.close();
+        await writeFile(state.fileHandle, text);
         setDirty(false);
         toast(`In ${state.fileName} gespeichert`);
         return;
@@ -636,9 +645,7 @@ dialog .dlg-actions { display: flex; gap: 8px; justify-content: flex-end; margin
     if (window.showSaveFilePicker) {
       try {
         const h = await showSaveFilePicker({ suggestedName: state.fileName, types: [{ description: 'JSON', accept: { 'application/json': ['.json'] } }] });
-        const w = await h.createWritable();
-        await w.write(text);
-        await w.close();
+        await writeFile(h, text);
         state.fileHandle = h;
         state.fileName = h.name;
         setDirty(false);
@@ -665,6 +672,44 @@ dialog .dlg-actions { display: flex; gap: 8px; justify-content: flex-end; margin
   function markChanged() {
     setDirty(true);
     persist();
+    changeNo++;
+    if (state.autoSave && state.fileHandle) { clearTimeout(autoT); autoT = setTimeout(autoSave, 800); }
+  }
+
+  // ---------- Auto-Save ----------
+  // Schreibt still in die geöffnete Datei; ohne Datei-Handle (kein File System Access API) nicht möglich.
+  let autoT, changeNo = 0;
+  async function autoSave() {
+    if (!state.dirty || !state.fileHandle) return;
+    const no = changeNo;
+    try {
+      await writeFile(state.fileHandle, serialize());
+      if (no === changeNo) setDirty(false);
+    } catch (e) {
+      console.warn('Auto-Save fehlgeschlagen', e);
+      toast('Auto-Save braucht Schreibzugriff', { label: 'Erlauben', run: grantWrite });
+    }
+  }
+
+  async function grantWrite() {
+    const h = state.fileHandle;
+    if (h?.requestPermission && await h.requestPermission({ mode: 'readwrite' }) !== 'granted') return false;
+    autoSave();
+    return true;
+  }
+
+  async function toggleAutoSave(e) {
+    state.autoSave = e.target.checked;
+    try { localStorage.setItem(AUTO_KEY, state.autoSave ? '1' : ''); } catch {}
+    if (!state.autoSave) { clearTimeout(autoT); return; }
+    // Noch keine Datei zum Schreiben: einmal "Speichern unter" fragen
+    if (!state.fileHandle) await save();
+    if (!state.fileHandle || !await grantWrite()) {
+      e.target.checked = state.autoSave = false;
+      toast('Auto-Save braucht eine gespeicherte Datei');
+      return;
+    }
+    toast(`Auto-Save in ${state.fileName} aktiv`);
   }
 
   function setStatus(q, s) {
@@ -1117,7 +1162,7 @@ dialog .dlg-actions { display: flex; gap: 8px; justify-content: flex-end; margin
     $('#resetTWrap').classList.toggle('hidden', !hasGlossary());
     const n = resetCandidates().length;
     $('#resetWarn').textContent = n
-      ? `${n} Einträge verlieren ihren Status. Direkt danach kannst du es noch rückgängig machen. Die Datei wird erst überschrieben, wenn du speicherst.`
+      ? `${n} Einträge verlieren ihren Status. Direkt danach kannst du es noch rückgängig machen. ${state.autoSave && state.fileHandle ? 'Auto-Save überschreibt danach die Datei.' : 'Die Datei wird erst überschrieben, wenn du speicherst.'}`
       : 'Nichts zurückzusetzen – alle gewählten Einträge sind bereits offen.';
     $('#resetGo').disabled = !n || $('#resetConfirm').value.trim().toUpperCase() !== RESET_WORD;
   }
@@ -1172,6 +1217,11 @@ dialog .dlg-actions { display: flex; gap: 8px; justify-content: flex-end; margin
   $('#btnOpen2').onclick = openFile;
   $('#btnSave').onclick = save;
   $('#btnSaveRes').onclick = save;
+  $('#autoSave').onchange = toggleAutoSave;
+  if (window.showSaveFilePicker) {
+    $('#autoWrap').classList.remove('hidden');
+    try { state.autoSave = $('#autoSave').checked = !!localStorage.getItem(AUTO_KEY); } catch {}
+  }
   $('#fileInput').onchange = e => { const f = e.target.files[0]; if (f) readFile(f); e.target.value = ''; };
   $('#btnPaste').onclick = () => {
     try { loadData(JSON.parse($('#pasteArea').value), { name: 'fragenkatalog.json' }); }
