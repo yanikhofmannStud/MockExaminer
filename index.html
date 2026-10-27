@@ -113,6 +113,21 @@ details.paste summary { cursor: pointer; color: var(--muted); }
 .filters { display: flex; gap: 8px; flex-wrap: wrap; margin: 16px 0; }
 .filters input[type=search] { flex: 1; min-width: 180px; }
 select { max-width: 100%; }
+.multi { position: relative; }
+.multi > summary {
+  list-style: none; cursor: pointer; position: relative; max-width: 260px;
+  background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 7px 28px 7px 10px;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.multi > summary::-webkit-details-marker { display: none; }
+.multi > summary::after { content: '▾'; position: absolute; right: 10px; color: var(--muted); }
+.multi-pop {
+  position: absolute; z-index: 20; top: calc(100% + 4px); left: 0; min-width: 100%; width: max-content;
+  max-width: min(420px, calc(100vw - 32px)); max-height: 60vh; overflow: auto;
+  background: var(--surface); border: 1px solid var(--border); border-radius: 10px; box-shadow: var(--shadow); padding: 6px 12px;
+}
+.multi-pop > button { width: 100%; text-align: left; padding: 4px 0; }
+.multi-pop label.chk { padding: 4px 0; }
 .section { margin-top: 22px; }
 .section-head { display: flex; align-items: baseline; gap: 10px; margin-bottom: 4px; flex-wrap: wrap; }
 .section-head .lead { font-size: 13px; margin: 0 0 8px; }
@@ -294,7 +309,7 @@ dialog .dlg-actions { display: flex; gap: 8px; justify-content: flex-end; margin
     </div>
     <div class="filters">
       <input type="search" id="search" placeholder="Fragen und Antworten durchsuchen…">
-      <select id="filterSection"></select>
+      <details class="multi" id="filterSection"><summary></summary><div class="multi-pop"></div></details>
       <select id="filterStatus"></select>
       <button id="btnExpand">Alle aufklappen</button>
     </div>
@@ -309,7 +324,7 @@ dialog .dlg-actions { display: flex; gap: 8px; justify-content: flex-end; margin
         <option value="q">Nur Fragen</option>
         <option value="t">Nur Begriffe</option>
       </select>
-      <select id="fcLecture"></select>
+      <details class="multi" id="fcLecture"><summary></summary><div class="multi-pop"></div></details>
       <select id="fcStatus">
         <option value="">Alle Status</option>
         <option value="!gekonnt">Noch nicht gekonnt</option>
@@ -764,12 +779,32 @@ dialog .dlg-actions { display: flex; gap: 8px; justify-content: flex-end; margin
     return g;
   }
 
+  // ---------- Lektionen-Mehrfachauswahl ----------
+  // Dropdown mit Checkboxen; node.values ist die Auswahl, leer = alle Lektionen
+  function fillMulti(node, opts, onChange) {
+    const sum = node.querySelector('summary');
+    const pop = node.querySelector('.multi-pop');
+    node.values = new Set();
+    const sync = () => {
+      const sel = opts.filter(o => node.values.has(o.value));
+      sum.textContent = !sel.length ? 'Alle Lektionen' : sel.length === 1 ? sel[0].label : `${sel.length} Lektionen`;
+      sum.title = sel.map(o => o.label).join(', ');
+      pop.querySelectorAll('input').forEach(i => i.checked = node.values.has(i.value));
+    };
+    const toggle = (v, on) => { node.values[on ? 'add' : 'delete'](v); sync(); onChange(); };
+    pop.replaceChildren(
+      el('button', { class: 'ghost', onclick: () => { node.values.clear(); sync(); onChange(); } }, 'Alle Lektionen'),
+      ...opts.map(o => el('label', { class: 'chk' },
+        el('input', { type: 'checkbox', value: o.value, onchange: e => toggle(o.value, e.target.checked) }), o.label)));
+    sync();
+  }
+  document.addEventListener('click', e => $$('details.multi[open]').forEach(d => { if (!d.contains(e.target)) d.open = false; }));
+
   // ---------- Katalog (Fragen oder Begriffe) ----------
   function buildFilters() {
     const src = SOURCES[state.src];
     $('#search').placeholder = state.src === 't' ? 'Begriffe und Erklärungen durchsuchen…' : 'Fragen und Antworten durchsuchen…';
-    $('#filterSection').replaceChildren(el('option', { value: '' }, 'Alle Lektionen'),
-      ...src.groups().map((g, i) => el('option', { value: String(i) }, src.name(g))));
+    fillMulti($('#filterSection'), src.groups().map((g, i) => ({ value: String(i), label: src.name(g) })), renderCatalog);
     const fst = $('#filterStatus');
     const keep = fst.value;
     fst.replaceChildren(el('option', { value: '' }, 'Alle Status'),
@@ -785,13 +820,13 @@ dialog .dlg-actions { display: flex; gap: 8px; justify-content: flex-end; margin
     $('#catTitle').textContent = `Lernstand · ${src.unit}`;
     renderStats($('#catStats'), $('#catBar'), countBy(all()));
     const term = $('#search').value.trim().toLowerCase();
-    const fSec = $('#filterSection').value;
+    const fSec = $('#filterSection').values;
     const fSt = $('#filterStatus').value;
     const list = $('#catList');
     list.replaceChildren();
 
     src.groups().forEach((g, gi) => {
-      if (fSec !== '' && Number(fSec) !== gi) return;
+      if (fSec.size && !fSec.has(String(gi))) return;
       const items = src.items(g);
       const qs = items.filter(q =>
         (!fSt || q.status === fSt) &&
@@ -1050,8 +1085,7 @@ dialog .dlg-actions { display: flex; gap: 8px; justify-content: flex-end; margin
       if (seen.has(x.lecture)) return;
       seen.set(x.lecture, /^\d+$/.test(String(x.lecture)) ? `Lektion ${x.lecture}` : x.group.split(' · ')[0]);
     });
-    $('#fcLecture').replaceChildren(el('option', { value: '' }, 'Alle Lektionen'),
-      ...[...seen].map(([l, name]) => el('option', { value: String(l) }, name)));
+    fillMulti($('#fcLecture'), [...seen].map(([l, name]) => ({ value: String(l), label: name })), () => buildDeck());
     $('#fcSource').classList.toggle('hidden', !hasGlossary());
     const fs = $('#fcStatus');
     fs.replaceChildren(fs.options[0], fs.options[1], ...statuses().map(s => el('option', { value: s }, `Nur ${label(s)}`)));
@@ -1059,10 +1093,10 @@ dialog .dlg-actions { display: flex; gap: 8px; justify-content: flex-end; margin
 
   function buildDeck(items) {
     if (!items) {
-      const src = $('#fcSource').value, lec = $('#fcLecture').value, st = $('#fcStatus').value;
+      const src = $('#fcSource').value, lec = $('#fcLecture').values, st = $('#fcStatus').value;
       items = allItems().filter(x =>
         src.includes(x.kind) &&
-        (!lec || String(x.lecture) === lec) &&
+        (!lec.size || lec.has(String(x.lecture))) &&
         (!st || (st === '!gekonnt' ? x.q.status !== 'gekonnt' : x.q.status === st)));
     }
     state.deck = { items, idx: 0, flipped: false, ratings: new Map() };
@@ -1244,7 +1278,6 @@ dialog .dlg-actions { display: flex; gap: 8px; justify-content: flex-end; margin
 
   $$('#tabs button').forEach(b => b.onclick = () => setView(b.dataset.view));
   $('#search').oninput = renderCatalog;
-  $('#filterSection').onchange = renderCatalog;
   $('#filterStatus').onchange = renderCatalog;
   $('#btnExpand').onclick = () => {
     expandAll = !expandAll;
@@ -1263,7 +1296,7 @@ dialog .dlg-actions { display: flex; gap: 8px; justify-content: flex-end; margin
   $('#btnNewExam').onclick = () => { state.exam = null; showExamPart('config'); updateAvail(); };
   $('#btnRetryWeak').onclick = () => startExam(shuffle(state.exam.items.filter(i => i.rating !== 'gekonnt')));
 
-  ['fcSource', 'fcLecture', 'fcStatus'].forEach(id => $('#' + id).onchange = () => buildDeck());
+  ['fcSource', 'fcStatus'].forEach(id => $('#' + id).onchange = () => buildDeck());
   $('#fcReverse').onchange = () => { state.deck.flipped = false; renderCard(true); };
   $('#fcShuffle').onclick = () => { buildDeck(shuffle(state.deck.items.slice())); toast('Gemischt'); };
   $('#fcCard').onclick = flipCard;
