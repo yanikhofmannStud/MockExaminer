@@ -201,6 +201,9 @@ label.chk input { margin-top: 4px; }
   display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center;
 }
 .fc-back { transform: rotateY(180deg); }
+.fc-echo { width: 100%; margin: 0 0 14px; padding-bottom: 10px; border-bottom: 1px solid var(--border); font-size: 13px; line-height: 1.45; color: var(--muted); text-align: left; overflow-wrap: anywhere; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+.fc-echo > * { margin: 0; }
+.fc-echo .tbl, .fc-echo pre { display: none; }
 .fc-face .fc-text { font-size: 24px; font-weight: 600; line-height: 1.35; overflow-wrap: anywhere; hyphens: auto; }
 .fc-face .fc-text.long { font-size: 17px; font-weight: 400; text-align: left; line-height: 1.6; }
 .fc-text p, .fc-text ul, .fc-text ol, .fc-text pre, .fc-text blockquote, .fc-text h4 { margin: 0 0 .6em; }
@@ -364,6 +367,7 @@ dialog .dlg-actions { display: flex; gap: 8px; justify-content: flex-end; margin
           </div>
           <div class="fc-face fc-back">
             <div class="fc-corner"><span class="fc-group"></span><span class="fc-pill"></span></div>
+            <div class="fc-echo" id="fcEcho"></div>
             <div class="fc-text" id="fcBack"></div>
           </div>
         </div>
@@ -1207,6 +1211,7 @@ dialog .dlg-actions { display: flex; gap: 8px; justify-content: flex-end; margin
     card.classList.toggle('flipped', dk.flipped);
     $('#fcFront').innerHTML = md(f);
     $('#fcBack').innerHTML = md(b);
+    $('#fcEcho').innerHTML = md(f);
     $('#fcFront').classList.toggle('long', f.length > 220 || f.includes('\n'));
     $('#fcBack').classList.toggle('long', b.length > 220 || b.includes('\n'));
     $$('#fcCard a').forEach(a => a.onclick = e => e.stopPropagation());
